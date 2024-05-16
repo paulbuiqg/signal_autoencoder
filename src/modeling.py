@@ -92,6 +92,12 @@ class SignalAutoencoder(nn.Module):
         x = self.decoder(x, (h, c))
         return x
 
+    def encode(self, x: torch.Tensor) -> torch.Tensor:
+        """Encode the input, return the codes."""
+        _, (h, _) = self.encoder(x)
+        h = h.permute((1, 0, 2))  # Batch dimension 1st
+        return torch.flatten(h, start_dim=1)
+
 
 def count_parameters(model: nn.Module) -> int:
     """Count trainable parameters of model."""
