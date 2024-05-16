@@ -106,7 +106,10 @@ def count_parameters(model: nn.Module) -> int:
 
 def sequence_l1(seq_in: torch.Tensor, seq_out: torch.Tensor,
                 lengths: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-    """L1 loss between two padded, masked sequences."""
+    """L1 loss between two padded, masked sequences.
+
+    The mask is used to remove the effect of padded values.
+    """
     max_len = seq_in.size(1)
     batch_size = seq_in.size(0)
     # Sum of feature dimension
