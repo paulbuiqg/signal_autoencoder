@@ -52,6 +52,7 @@ class SignalDecoder(nn.Module):
                                 num_layers=n_lstm_layer, batch_first=True)
         self.linear_dec = nn.Linear(lstm_hidden_size, n_conv_channel_3)
         self.conv_dec = nn.Sequential(
+            nn.ReLU(),
             nn.Conv1d(n_conv_channel_3, n_conv_channel_2,
                       3, stride=1, padding=1),
             nn.ReLU(),
@@ -60,7 +61,6 @@ class SignalDecoder(nn.Module):
             nn.ReLU(),
             nn.Conv1d(n_conv_channel_1, n_channel_in,
                       3, stride=1, padding=1),
-            nn.ReLU(),
         )
 
     def forward(self, x: torch.Tensor, s: Tuple[torch.Tensor, torch.Tensor]) \
