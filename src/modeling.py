@@ -40,7 +40,7 @@ class SignalEncoder(nn.Module):
 class SignalDecoder(nn.Module):
     """Decoder with LTSM and 1D-convolution layers.
 
-    Linear layer after LTSM to resize features to correct channel dimension
+    Linear layer after LTSM to resize features to adjust channel dimension
     for convolution.
     """
 
