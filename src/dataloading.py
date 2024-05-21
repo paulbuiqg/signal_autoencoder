@@ -70,7 +70,7 @@ def fetch_events() -> pd.DataFrame:
 
 
 def fetch_data_for_one_event(event_id: int) -> List[obspy.Trace]:
-    """Query NCDEC with ObsPy for event trace.
+    """Query NCDEC with ObsPy for event traces.
 
     Keep 3-channel seismigraphs with channels HNE, HNN, HNZ.
     (https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/)
