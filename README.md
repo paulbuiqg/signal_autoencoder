@@ -12,7 +12,6 @@ Schematically, the encoder architecture is:
 ->  Conv1d(n_conv_channel_1, n_conv_channel_2)
 ->  ReLU
 ->  Conv1d(n_conv_channel_2, n_conv_channel_3)
-->  ReLU
 ->  LSTM(n_conv_channel_3, lstm_hidden_size)
 ->  output, hidden_state, cell_state
 ```
@@ -21,7 +20,6 @@ and the decoder architecture is
     output, hidden_state, cell_state
 ->  LSTM(lstm_hidden_size, lstm_hidden_size)
 ->  Linear(lstm_hidden_size, n_conv_channel_3)
-->  ReLU
 ->  Conv1d(n_conv_channel_3, n_conv_channel_2)
 ->  ReLU
 ->  Conv1d(n_conv_channel_2, n_conv_channel_1)
