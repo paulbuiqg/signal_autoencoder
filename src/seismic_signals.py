@@ -1,20 +1,29 @@
 # %%
 
-import obspy
-import requests
-import xml.etree.ElementTree as ET
-import xmltodict
+import pickle
 
-# Request NCEDC
-response = requests.get('https://service.ncedc.org/fdsnws/event/1/query?minmag=5&maxmag=9')
-tree = ET.fromstring(response.text)
-d = xmltodict.parse(response.content)
-
-# To get one eventid
-print(d['q:quakeml']['eventParameters']['event'][0]['@catalog:eventid'])
-
-st = obspy.read('https://service.ncedc.org/ncedcws/eventdata/1/query?eventid=73926401')
-print(len(st))
-st[0].plot()
+import dataloading 
 
 # %%
+
+df_event = dataloading.fetch_events()
+print(df_event)
+
+# %%
+
+traces = []
+
+for event_id in df_event['eventID']:
+    print(event_id)
+    try:
+        traces = dataloading.fetch_data_for_one_event(event_id)
+        i, j = 0, 0
+        while j + 2 < len(traces):
+            tr = traces[j: j + 3]
+            with open(f'data/{event_id}_{i}.pkl', 'wb') as f:
+                pickle.dump(tr, f)
+            i += 1
+            j += 3
+    except Exception as e:
+        print(f'Event {event_id}:', e)
+        continue
