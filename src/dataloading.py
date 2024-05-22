@@ -1,7 +1,7 @@
 """Data handling for 1D multichannel signals of variable-length.
 
 Study case: seismic events from Northern California Earthquake Data Center
-(https://service.ncedc.org)
+(https://ncedc.org/web-services-home.html)
 """
 
 
