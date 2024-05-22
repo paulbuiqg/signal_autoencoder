@@ -123,7 +123,7 @@ class SeismicSignals(Dataset):
     def __len__(self) -> int:
         return len(self.files)
 
-    def __getitem__(self, i: int) -> Union[None, torch.Tensor]:
+    def __getitem__(self, i: int) -> Union[None, Tuple[torch.Tensor, int]]:
         filepath = f'{self.path}/{self.files[i]}'
         try:
             with open(filepath, 'rb') as f:
