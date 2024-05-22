@@ -1,4 +1,4 @@
-# Signal Autoencoder
+# Signal Autoencoder (WIP)
 
 A neural network autoencoder for multichannel, one-dimensional signals of variable length.
 
