@@ -35,9 +35,15 @@ I apply this autoencoder to a dataset of signals of seismic waveforms measured b
 
 The data is obtained from the [Northern California Earthquake Data Center](https://ncedc.org/). Their web service is [queried](https://service.ncedc.org/fdsnws/event/1/query?minmag=5&maxmag=9) for seismic events with a magnitude between 5 and 9.
 
-...
-
-[waveform plot]
+<p align="center">
+  <img src="https://github.com/paulbuiqg/signal_autoencoder/blob/main/viz/HNE.png" />
+</p>
+<p align="center">
+  <img src="https://github.com/paulbuiqg/signal_autoencoder/blob/main/viz/HNN.png" />
+</p>
+<p align="center">
+  <img src="https://github.com/paulbuiqg/signal_autoencoder/blob/main/viz/HNZ.png" />
+</p>
 
 ...
 
