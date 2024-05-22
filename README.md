@@ -29,7 +29,19 @@ and the decoder architecture is
 
 The code produced by the encoder is the (flattened) hidden state outputed from its LSTM layers.
 
-To do next:
+## Study case: 3-channel seismic signals
 
-- find a corresponding dataset
-- training
+I apply this autoencoder to a dataset of signals of seismic waveforms measured by 3-channel seismometers. The three channels correspond to the ground motion along the North-South, East-West and vertical axes.
+
+The data is obtained from the [Northern California Earthquake Data Center](https://ncedc.org/).
+
+...
+
+## How to use
+
+- Go to the repo root directory
+- Install required libraries: `pip install -r requirements.txt`
+- ...
+- For unit testing, run: `pytest`
+  
+...
