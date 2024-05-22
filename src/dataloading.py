@@ -5,13 +5,17 @@ Study case: seismic events from Northern California Earthquake Data Center
 """
 
 
-from typing import List, Tuple
+import os
+import pickle
+from typing import List, Tuple, Union
 
+import numpy as np
 import obspy
 import pandas as pd
 import requests
 import torch
 import xmltodict
+from torch.utils.data import Dataset
 
 
 def collate_fn(data: list) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -107,4 +111,28 @@ def fetch_data_for_one_event(event_id: int) -> List[obspy.Trace]:
     traces = [traces[i] for i in trace_stats.index]
     return traces
 
-# traces = fetch_data_for_one_event(73926401)
+
+class SeismicSignals(Dataset):
+    """Dataset class for 3-channel seismic signals of any length."""
+
+    def __init__(self, path: str):
+        super().__init__()
+        self.path = path
+        self.files = os.listdir(self.path)
+
+    def __len__(self) -> int:
+        return len(self.files)
+
+    def __getitem__(self, i: int) -> Union[None, torch.Tensor]:
+        filepath = f'{self.path}/{self.files[i]}'
+        try:
+            with open(filepath, 'rb') as f:
+                tr = pickle.load(f)
+            signal_0, signal_1, signal_2 = tr[0].data, tr[1].data, tr[2].data
+            seqlen = min(len(signal_0), len(signal_1), len(signal_2))
+            signal = np.vstack((signal_0[:seqlen], signal_1[:seqlen],
+                                signal_2[:seqlen]))
+            return torch.tensor(signal.T), seqlen
+        except BaseException as e:
+            print(filepath, str(e))
+            return None
