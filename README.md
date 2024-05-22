@@ -1,4 +1,4 @@
-# Signal Autoencoder (WIP)
+# Signal Autoencoder [WIP]
 
 A neural network autoencoder for multichannel, one-dimensional signals of variable length.
 
@@ -34,6 +34,10 @@ The code produced by the encoder is the (flattened) hidden state outputed from i
 I apply this autoencoder to a dataset of signals of seismic waveforms measured by 3-channel seismometers. The three channels correspond to the ground motion along the North-South, East-West and vertical axes.
 
 The data is obtained from the [Northern California Earthquake Data Center](https://ncedc.org/). Their web service is [queried](https://service.ncedc.org/fdsnws/event/1/query?minmag=5&maxmag=9) for seismic events with a magnitude between 5 and 9.
+
+...
+
+[waveform plot]
 
 ...
 
