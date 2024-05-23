@@ -131,7 +131,7 @@ class SignalAutoencoder(nn.Module):
         self.train()
         loss_history = []
         pbar = tqdm(dataloader, desc='Training', unit='batch')
-        for X, le, ma in dataloader:
+        for X, le, ma in pbar:
             X, le, ma = X.to(device), le.to(device), ma.to(device)
             X_pred = self(X)
             loss = loss_fn(X, X_pred, le, ma)
