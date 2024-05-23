@@ -148,7 +148,7 @@ class SeismicSignals(Dataset):
         except BaseException as e:
             print(filepath, str(e))
             return None
-        
+
     def set_mean_and_std(self, mean: float, std: float):
         """Set mean and std values."""
         self.mean = mean
