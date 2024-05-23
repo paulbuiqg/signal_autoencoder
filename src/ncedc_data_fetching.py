@@ -19,7 +19,7 @@ df_event.to_csv('data/events.csv', index=False)
 traces = []
 files = os.listdir('data')
 for event_id in df_event['eventID']:
-    if any(event_id in f for f in files):
+    if any(str(event_id) in f for f in files):
         print(f'{event_id} ok')
         continue
     print(event_id)
