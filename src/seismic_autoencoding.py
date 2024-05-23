@@ -2,6 +2,8 @@
 
 # %%
 # Imports
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -16,12 +18,8 @@ import modeling
 # One item: 3-channel signal of seismic waveforms from one event ("trace")
 
 print('Dataset creation...')
-try:
-    events = pd.read_csv('data/events.csv')
-    dataset = dataloading.SeismicSignals('data', events)
-except FileNotFoundError:  # For interactive mode in VSCode
-    events = pd.read_csv('../data/events.csv')
-    dataset = dataloading.SeismicSignals('../data', events)
+events = pd.read_csv('data/events.csv')
+dataset = dataloading.SeismicSignals('data', events)
 print(f'{len(events)} seismic events')
 print(f'{len(dataset)} items')
 print('')
@@ -62,28 +60,23 @@ print('')
 # Training (if no saved model)
 
 print('Training...')
-model.train_one_epoch(device, dataloader, loss_fn, optimizer)
-plt.plot(np.log(model.checkpoint['loss_history']), label='Training')
-plt.xlabel('Iteration')
-plt.ylabel('Log-loss')
-plt.legend()
-try:
+if not os.path.isfile('src/autoencoder.pt'):
+    model.train_one_epoch(device, dataloader, loss_fn, optimizer)
+    plt.plot(np.log(model.checkpoint['loss_history']), label='Training')
+    plt.xlabel('Iteration')
+    plt.ylabel('Log-loss')
+    plt.legend()
     plt.savefig('viz/loss.png')
     torch.save(model.checkpoint, 'src/autoencoder.pt')
-except FileNotFoundError:
-    plt.savefig('../viz/loss.png')
-    torch.save(model.checkpoint, '../src/autoencoder.pt')
 print('Model saved')
 print('')
 
 # %%
 # Encoding
 
-try:
-    checkpoint = torch.load('src/autoencoder.pt')
-except FileNotFoundError:
-    checkpoint = torch.load('../src/autoencoder.pt')
-model.load_state_dict(checkpoint['model_state_dict'])
 print('Encoding...')
+checkpoint = torch.load('src/autoencoder.pt')
+model.load_state_dict(checkpoint['model_state_dict'])
+print('Model loaded')
 embeddings = model.train_one_epoch(device, dataloader, loss_fn, optimizer)
 # TODO: write embeddings to file
