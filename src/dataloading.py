@@ -134,7 +134,7 @@ class SeismicSignals(Dataset):
             seqlen = min(len(signal_0), len(signal_1), len(signal_2))
             signal = np.vstack((signal_0[:seqlen], signal_1[:seqlen],
                                 signal_2[:seqlen]))
-            return torch.tensor(signal.T), seqlen
+            return torch.FloatTensor(signal.T), seqlen
         except BaseException as e:
             print(filepath, str(e))
             return None
