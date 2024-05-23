@@ -27,7 +27,7 @@ and the decoder architecture is
 ->  Conv1d(n_conv_channel_1, n_channel_in)
 ```
 
-The code produced by the encoder is the (flattened) hidden state outputed from its LSTM layers.
+The embedding produced by the encoder is the (flattened) hidden state outputed from its LSTM layers.
 
 ## Study case: 3-channel seismic signals
 
