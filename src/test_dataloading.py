@@ -5,6 +5,7 @@ import random
 
 from typing import List, Tuple
 
+import pandas as pd
 import pytest
 import torch
 from torch.utils.data import DataLoader, Dataset
@@ -24,7 +25,8 @@ def data() -> List[Tuple[torch.Tensor, int]]:
 @pytest.fixture
 def dataset() -> Dataset:
     """Make a dataset from the SeismicSignals class."""
-    return dataloading.SeismicSignals('data')
+    events = pd.read_csv('data/events.csv')
+    return dataloading.SeismicSignals('data', events)
 
 
 @pytest.fixture
