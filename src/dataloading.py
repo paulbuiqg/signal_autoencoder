@@ -116,6 +116,23 @@ def fetch_data_for_one_event(event_id: int) -> List[obspy.Trace]:
     return traces
 
 
+def process_one_event(event_id: str, files: list):
+    """Write signal files for one seismic event."""
+    if any(event_id in f for f in files):
+        return
+    try:
+        traces = fetch_data_for_one_event(event_id)
+        i, j = 0, 0
+        while j + 2 < len(traces):
+            tr = traces[j: j + 3]
+            with open(f'data/{event_id}_{i}.pkl', 'wb') as f:
+                pickle.dump(tr, f)
+            i += 1
+            j += 3
+    except BaseException as e:
+        print(f'Event {event_id}:', e)
+
+
 class SeismicSignals(Dataset):
     """Dataset class for 3-channel seismic signals of any length."""
 
