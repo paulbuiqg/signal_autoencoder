@@ -126,14 +126,16 @@ class SignalAutoencoder(nn.Module):
         self.train()
         loss_history = []
         pbar = tqdm(dataloader, desc='Training', unit='batch')
-        for X in pbar:
-            X = X.to(device)
+        for X, le, ma in pbar:
+            X, le, ma = X.to(device), le.to(device), ma.to(device)
             X_pred = self(X)
-            loss = loss_fn(X_pred, X)
+            loss = loss_fn(X, X_pred, le, ma)
+            del X, X_pred, le, ma
             loss.backward()
-            loss_history.append(loss.item())
-            pbar.set_postfix_str(f'loss={loss.item():>8f}')
+            loss_item = loss.item()
             del loss
+            loss_history.append(loss_item)
+            pbar.set_postfix_str(f'loss={loss_item:>8f}')
             optimizer.step()
             optimizer.zero_grad()
         return optimizer, loss_history
@@ -172,12 +174,16 @@ class SignalAutoencoder(nn.Module):
         pbar = tqdm(dataloader, desc='Evaluation', unit='batch')
         mean_loss = 0
         with torch.no_grad():
-            for X in pbar:
-                X = X.to(device)
+            for X, le, ma in pbar:
+                X, le, ma = X.to(device), le.to(device), ma.to(device)
                 X_pred = self(X)
-                loss = loss_fn(X_pred, X)
-                mean_loss += loss.item() / len(dataloader)
-                pbar.set_postfix_str(f'loss={loss.item():>8f}')
+                loss = loss_fn(X, X_pred, le, ma)
+                del X, X_pred, le, ma
+                loss.backward()
+                del loss
+                loss_item = loss.item()
+                mean_loss += loss_item / len(dataloader)
+                pbar.set_postfix_str(f'loss={loss_item:>8f}')
         return mean_loss
 
     def update_checkpoint(
