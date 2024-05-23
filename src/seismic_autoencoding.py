@@ -30,12 +30,14 @@ print('')
 # Dataloader
 
 print('Dataloader creation...')
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print('Device:', device)
 batch_size = 4
 dataloader = DataLoader(dataset,
                         batch_size=batch_size,
                         shuffle=True,
                         collate_fn=dataloading.collate_fn)
-m, s = dataloading.compute_signal_mean_and_std('cuda', dataloader)
+m, s = dataloading.compute_signal_mean_and_std(device, dataloader)
 dataloader.dataset.set_mean_and_std(m, s)
 print('')
 
@@ -43,7 +45,6 @@ print('')
 # Model, loss, optimizer
 
 print('Model creation...')
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
 n_conv_channel_1 = 64
 n_conv_channel_2 = 128
 n_conv_channel_3 = 256
