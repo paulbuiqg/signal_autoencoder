@@ -62,12 +62,12 @@ print('')
 print('Training...')
 if not os.path.isfile('src/autoencoder.pt'):
     model.train_one_epoch(device, dataloader, loss_fn, optimizer)
+    torch.save(model.checkpoint, 'src/autoencoder.pt')
     plt.plot(np.log(model.checkpoint['loss_history']), label='Training')
     plt.xlabel('Iteration')
     plt.ylabel('Log-loss')
     plt.legend()
     plt.savefig('viz/loss.png')
-    torch.save(model.checkpoint, 'src/autoencoder.pt')
 print('Model saved')
 print('')
 
