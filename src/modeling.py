@@ -106,10 +106,7 @@ class SignalAutoencoder(nn.Module):
         # Checkpoint
         self.checkpoint = {
             'loss_history': [],
-            'epochs': 0,
-            'best_val_loss': float('inf'),
-            'best_epoch': 0,
-            'patience_counter': 0,
+            'epochs': 0
         }
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -156,7 +153,7 @@ class SignalAutoencoder(nn.Module):
         """Update the checkpoint dictionary."""
         self.checkpoint['model_state_dict'] = self.state_dict()
         self.checkpoint['optimizer_state_dict'] = optimizer.state_dict()
-        self.checkpoint['train_loss_history'] += loss_history
+        self.checkpoint['loss_history'] += loss_history
         self.checkpoint['epochs'] += 1
 
     # def train_one_epoch(

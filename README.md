@@ -33,7 +33,7 @@ The embedding produced by the encoder is the (flattened) hidden state outputed f
 
 I apply this autoencoder to a dataset of signals of seismic waveforms measured by 3-channel seismometers. The three channels correspond to the ground motion along the North-South, East-West and vertical axes.
 
-The data is obtained from the [Northern California Earthquake Data Center](https://ncedc.org/). Their web service is [queried](https://service.ncedc.org/fdsnws/event/1/query?minmag=5&maxmag=9) for seismic events with a magnitude between 5 and 9.
+The data is obtained from the [Northern California Earthquake Data Center](https://ncedc.org/) (NCEDC). Their web service is [queried](https://service.ncedc.org/fdsnws/event/1/query?minmag=5&maxmag=9) for seismic events with a magnitude between 5 and 9.
 
 <p align="center">
   <img src="https://github.com/paulbuiqg/signal_autoencoder/blob/main/viz/HNE.png" />
@@ -51,7 +51,7 @@ The data is obtained from the [Northern California Earthquake Data Center](https
 
 - Go to the repo root directory
 - Install required libraries: `pip install -r requirements.txt`
-- ...
 - For unit testing, run: `pytest`
-  
+- To download the seismic data from NCEDC, run: `python3 src/seismic_downloading.py`
+- To train the autoencoder, run: `python3 src/seismic_autoencoding.py`
 ...
