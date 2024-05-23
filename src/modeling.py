@@ -94,10 +94,18 @@ class SignalAutoencoder(nn.Module):
         self.decoder = SignalDecoder(n_channel_in, n_conv_channel_1,
                                      n_conv_channel_2, n_conv_channel_3,
                                      lstm_hidden_size, n_lstm_layer)
+        # # Checkpoint
+        # self.checkpoint = {
+        #     'train_loss_history': [],
+        #     'val_loss_history': [],
+        #     'epochs': 0,
+        #     'best_val_loss': float('inf'),
+        #     'best_epoch': 0,
+        #     'patience_counter': 0,
+        # }
         # Checkpoint
         self.checkpoint = {
-            'train_loss_history': [],
-            'val_loss_history': [],
+            'loss_history': [],
             'epochs': 0,
             'best_val_loss': float('inf'),
             'best_epoch': 0,
@@ -126,7 +134,7 @@ class SignalAutoencoder(nn.Module):
         self.train()
         loss_history = []
         pbar = tqdm(dataloader, desc='Training', unit='batch')
-        for X, le, ma in pbar:
+        for X, le, ma in dataloader:
             X, le, ma = X.to(device), le.to(device), ma.to(device)
             X_pred = self(X)
             loss = loss_fn(X, X_pred, le, ma)
@@ -138,83 +146,119 @@ class SignalAutoencoder(nn.Module):
             pbar.set_postfix_str(f'loss={loss_item:>8f}')
             optimizer.step()
             optimizer.zero_grad()
-        return optimizer, loss_history
-
-    def train_many_epochs(
-        self,
-        device: str,
-        dataloader_train: DataLoader,
-        dataloader_val: DataLoader,
-        loss_fn: torch.nn.Module,
-        optimizer: torch.optim.Optimizer,
-        n_epoch: int,
-        patience: int
-    ):
-        """Run several training epochs; update checkpoint after each epoch."""
-        epoch = self.checkpoint['epochs'] + 1
-        for epoch in range(epoch, epoch + n_epoch):
-            print(f'-- Epoch {epoch} --')
-            if self.early_stopping(patience):
-                print('Early stopping!')
-                break
-            optimizer, loss_history = self.train_one_epoch(
-                device, dataloader_train, loss_fn, optimizer)
-            val_loss = self.evaluate(device, dataloader_val, loss_fn)
-            print(f'Validation loss: {val_loss:>8f}')
-            self.update_checkpoint(optimizer, epoch, loss_history, val_loss)
-
-    def evaluate(
-        self,
-        device: str,
-        dataloader: DataLoader,
-        loss_fn: torch.nn.Module,
-    ) -> float:
-        """Compute (mean) loss from labeled data and their prediction."""
-        self.eval()
-        pbar = tqdm(dataloader, desc='Evaluation', unit='batch')
-        mean_loss = 0
-        with torch.no_grad():
-            for X, le, ma in pbar:
-                X, le, ma = X.to(device), le.to(device), ma.to(device)
-                X_pred = self(X)
-                loss = loss_fn(X, X_pred, le, ma)
-                del X, X_pred, le, ma
-                loss.backward()
-                del loss
-                loss_item = loss.item()
-                mean_loss += loss_item / len(dataloader)
-                pbar.set_postfix_str(f'loss={loss_item:>8f}')
-        return mean_loss
+        self.update_checkpoint(optimizer, loss_history)
 
     def update_checkpoint(
         self,
         optimizer: torch.optim.Optimizer,
-        epoch: int,
-        train_loss_history: list,
-        val_loss: float
+        loss_history: list,
     ):
         """Update the checkpoint dictionary."""
         self.checkpoint['model_state_dict'] = self.state_dict()
         self.checkpoint['optimizer_state_dict'] = optimizer.state_dict()
-        self.checkpoint['train_loss_history'] += train_loss_history
-        self.checkpoint['val_loss_history'] += [val_loss] * \
-            len(train_loss_history)
+        self.checkpoint['train_loss_history'] += loss_history
         self.checkpoint['epochs'] += 1
-        if val_loss < self.checkpoint['best_val_loss']:
-            self.checkpoint['best_model_state_dict'] = self.state_dict()
-            self.checkpoint['best_val_loss'] = val_loss
-            self.checkpoint['best_epoch'] = epoch
 
-    def early_stopping(self, patience: int) -> bool:
-        """Check if patience limit has been reached."""
-        if self.checkpoint['epochs'] == 0:
-            return False
-        val_loss = self.checkpoint['val_loss_history'][-1]
-        if self.checkpoint['best_val_loss'] < val_loss:
-            self.checkpoint['patience_counter'] += 1
-        else:
-            self.checkpoint['patience_counter'] = 0
-        return patience <= self.checkpoint['patience_counter']
+    # def train_one_epoch(
+    #     self,
+    #     device: str,
+    #     dataloader: DataLoader,
+    #     loss_fn: torch.nn.Module,
+    #     optimizer: torch.optim.Optimizer,
+    # ) -> Tuple[torch.optim.Optimizer, list]:
+    #     """Run one training epoch; update optimizer and loss history."""
+    #     self.train()
+    #     loss_history = []
+    #     pbar = tqdm(dataloader, desc='Training', unit='batch')
+    #     for X, le, ma in dataloader:
+    #         X, le, ma = X.to(device), le.to(device), ma.to(device)
+    #         X_pred = self(X)
+    #         loss = loss_fn(X, X_pred, le, ma)
+    #         del X, X_pred, le, ma
+    #         loss.backward()
+    #         loss_item = loss.item()
+    #         del loss
+    #         loss_history.append(loss_item)
+    #         pbar.set_postfix_str(f'loss={loss_item:>8f}')
+    #         optimizer.step()
+    #         optimizer.zero_grad()
+    #     return optimizer, loss_history
+
+    # def train_many_epochs(
+    #     self,
+    #     device: str,
+    #     dataloader_train: DataLoader,
+    #     dataloader_val: DataLoader,
+    #     loss_fn: torch.nn.Module,
+    #     optimizer: torch.optim.Optimizer,
+    #     n_epoch: int,
+    #     patience: int
+    # ):
+    #     """Run several training epochs; update checkpoint after each epoch."""
+    #     epoch = self.checkpoint['epochs'] + 1
+    #     for epoch in range(epoch, epoch + n_epoch):
+    #         print(f'-- Epoch {epoch} --')
+    #         if self.early_stopping(patience):
+    #             print('Early stopping!')
+    #             break
+    #         optimizer, loss_history = self.train_one_epoch(
+    #             device, dataloader_train, loss_fn, optimizer)
+    #         val_loss = self.evaluate(device, dataloader_val, loss_fn)
+    #         print(f'Validation loss: {val_loss:>8f}')
+    #         self.update_checkpoint(optimizer, epoch, loss_history, val_loss)
+
+    # def evaluate(
+    #     self,
+    #     device: str,
+    #     dataloader: DataLoader,
+    #     loss_fn: torch.nn.Module,
+    # ) -> float:
+    #     """Compute (mean) loss from labeled data and their prediction."""
+    #     self.eval()
+    #     pbar = tqdm(dataloader, desc='Evaluation', unit='batch')
+    #     mean_loss = 0
+    #     with torch.no_grad():
+    #         for X, le, ma in pbar:
+    #             X, le, ma = X.to(device), le.to(device), ma.to(device)
+    #             X_pred = self(X)
+    #             loss = loss_fn(X, X_pred, le, ma)
+    #             del X, X_pred, le, ma
+    #             loss.backward()
+    #             del loss
+    #             loss_item = loss.item()
+    #             mean_loss += loss_item / len(dataloader)
+    #             pbar.set_postfix_str(f'loss={loss_item:>8f}')
+    #     return mean_loss
+
+    # def update_checkpoint(
+    #     self,
+    #     optimizer: torch.optim.Optimizer,
+    #     epoch: int,
+    #     train_loss_history: list,
+    #     val_loss: float
+    # ):
+    #     """Update the checkpoint dictionary."""
+    #     self.checkpoint['model_state_dict'] = self.state_dict()
+    #     self.checkpoint['optimizer_state_dict'] = optimizer.state_dict()
+    #     self.checkpoint['train_loss_history'] += train_loss_history
+    #     self.checkpoint['val_loss_history'] += [val_loss] * \
+    #         len(train_loss_history)
+    #     self.checkpoint['epochs'] += 1
+    #     if val_loss < self.checkpoint['best_val_loss']:
+    #         self.checkpoint['best_model_state_dict'] = self.state_dict()
+    #         self.checkpoint['best_val_loss'] = val_loss
+    #         self.checkpoint['best_epoch'] = epoch
+
+    # def early_stopping(self, patience: int) -> bool:
+    #     """Check if patience limit has been reached."""
+    #     if self.checkpoint['epochs'] == 0:
+    #         return False
+    #     val_loss = self.checkpoint['val_loss_history'][-1]
+    #     if self.checkpoint['best_val_loss'] < val_loss:
+    #         self.checkpoint['patience_counter'] += 1
+    #     else:
+    #         self.checkpoint['patience_counter'] = 0
+    #     return patience <= self.checkpoint['patience_counter']
 
 
 def count_parameters(model: nn.Module) -> int:
