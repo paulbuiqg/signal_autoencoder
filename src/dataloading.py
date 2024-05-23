@@ -115,10 +115,12 @@ def fetch_data_for_one_event(event_id: int) -> List[obspy.Trace]:
 class SeismicSignals(Dataset):
     """Dataset class for 3-channel seismic signals of any length."""
 
-    def __init__(self, path: str):
+    def __init__(self, path: str, events: pd.DataFrame):
         super().__init__()
         self.path = path
-        self.files = os.listdir(self.path)
+        self.files, all_files = [], os.listdir(self.path)
+        for event_id in events['eventID']:
+            self.files += [f for f in all_files if str(event_id) in f]
 
     def __len__(self) -> int:
         return len(self.files)
