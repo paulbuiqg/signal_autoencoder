@@ -53,5 +53,6 @@ The data is obtained from the [Northern California Earthquake Data Center](https
 - Install required libraries: `pip install -r requirements.txt`
 - For unit testing, run: `pytest`
 - To download the seismic data from NCEDC, run: `python3 src/seismic_downloading.py`
-- To train the autoencoder, run: `python3 src/seismic_autoencoding.py`
+- To train the autoencoder and compute the seismic signal embeddings, run: `python3 src/seismic_autoencoding.py`
+- 
 ...
