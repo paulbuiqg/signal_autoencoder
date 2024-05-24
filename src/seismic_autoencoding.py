@@ -1,7 +1,6 @@
 """Train the autoencoder, save the trained model, compute embeddings."""
 
-# %%
-# Imports
+
 import os
 
 import matplotlib.pyplot as plt
@@ -13,10 +12,9 @@ from torch.utils.data import DataLoader
 import dataloading
 import modeling
 
-# %%
+
 # Dataset
 # One item: 3-channel signal of seismic waveforms from one event ("trace")
-
 print('Dataset creation...')
 events = pd.read_csv('data/events.csv')
 dataset = dataloading.SeismicSignals('data', events)
@@ -24,9 +22,7 @@ print(f'{len(events)} seismic events')
 print(f'{len(dataset)} items')
 print('')
 
-# %%
 # Dataloader
-
 print('Dataloader creation...')
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print('Device:', device)
@@ -39,9 +35,7 @@ m, s = dataloading.compute_signal_mean_and_std(device, dataloader)
 dataloader.dataset.set_mean_and_std(m, s)
 print('')
 
-# %%
 # Model, loss, optimizer
-
 print('Model creation...')
 n_conv_channel_1 = 64
 n_conv_channel_2 = 128
@@ -56,9 +50,7 @@ loss_fn = modeling.sequence_l1
 optimizer = torch.optim.Adam(model.parameters(), lr=.001)
 print('')
 
-# %%
 # Training (if no saved model)
-
 print('Training...')
 if not os.path.isfile('src/autoencoder.pt'):
     model.train_one_epoch(device, dataloader, loss_fn, optimizer)
@@ -71,12 +63,11 @@ if not os.path.isfile('src/autoencoder.pt'):
 print('Model saved')
 print('')
 
-# %%
 # Encoding
-
 print('Encoding...')
 checkpoint = torch.load('src/autoencoder.pt')
 model.load_state_dict(checkpoint['model_state_dict'])
 print('Model loaded')
-embeddings = model.train_one_epoch(device, dataloader, loss_fn, optimizer)
+embeddings = model.encode(device, dataloader)
+print(embeddings) ###
 # TODO: write embeddings to file
