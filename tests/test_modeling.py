@@ -8,8 +8,8 @@ import torch
 
 from signal_autoencoder.dataloading import collate_fn
 from signal_autoencoder.modeling import (SignalAutoencoder,
-				         SignalEncoder,
-					 SignalDecoder,
+				                         SignalEncoder,
+					                     SignalDecoder,
                                          sequence_l1)
 
 
