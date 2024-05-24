@@ -4,7 +4,6 @@
 import os
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
@@ -55,7 +54,7 @@ print('Training...')
 if not os.path.isfile('src/autoencoder.pt'):
     model.train_one_epoch(device, dataloader, loss_fn, optimizer)
     torch.save(model.checkpoint, 'src/autoencoder.pt')
-    plt.plot(np.log(model.checkpoint['loss_history']), label='Training')
+    plt.plot(model.checkpoint['loss_history'], label='Training')
     plt.xlabel('Iteration')
     plt.ylabel('Log-loss')
     plt.legend()
@@ -71,4 +70,4 @@ print('Model loaded')
 embeddings = model.encode(device, dataloader)
 torch.save(embeddings, 'data/embeddings.pt')
 print('Embeddings saved')
-print(embeddings) ###
+# TODO: save dataloader?
