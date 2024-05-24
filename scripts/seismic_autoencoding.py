@@ -8,8 +8,8 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
-import dataloading
-import modeling
+from signal_autoencoder import dataloading
+from signal_autoencoder import modeling
 
 
 # Dataset
@@ -32,6 +32,7 @@ dataloader = DataLoader(dataset,
                         collate_fn=dataloading.collate_fn)
 m, s = dataloading.compute_signal_mean_and_std(device, dataloader)
 dataloader.dataset.set_mean_and_std(m, s)
+print('Dataloader saved')
 print('')
 
 # Model, loss, optimizer
@@ -51,23 +52,19 @@ print('')
 
 # Training (if no saved model)
 print('Training...')
-if not os.path.isfile('src/autoencoder.pt'):
-    model.train_one_epoch(device, dataloader, loss_fn, optimizer)
-    torch.save(model.checkpoint, 'src/autoencoder.pt')
-    plt.plot(model.checkpoint['loss_history'], label='Training')
-    plt.xlabel('Iteration')
-    plt.ylabel('Log-loss')
-    plt.legend()
-    plt.savefig('viz/loss.png')
+model.train_one_epoch(device, dataloader, loss_fn, optimizer)
+torch.save(model.checkpoint, 'src/autoencoder.pt')
+plt.plot(model.checkpoint['loss_history'], label='Training')
+plt.xlabel('Iteration')
+plt.ylabel('Log-loss')
+plt.legend()
+plt.savefig('viz/loss.png')
 print('Model saved')
 print('')
 
 # Encoding
 print('Encoding...')
-checkpoint = torch.load('src/autoencoder.pt')
 model.load_state_dict(checkpoint['model_state_dict'])
-print('Model loaded')
 embeddings = model.encode(device, dataloader)
 torch.save(embeddings, 'data/embeddings.pt')
 print('Embeddings saved')
-# TODO: save dataloader?
