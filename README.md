@@ -50,9 +50,9 @@ The data is obtained from the [Northern California Earthquake Data Center](https
 ## How to use
 
 - Go to the repo root directory
-- Install required libraries: `pip install -r requirements.txt`
+- Download and install packages: `pip install -r requirements.txt`
+- Install local package: `pip install -e .`
 - For unit testing, run: `pytest`
 - To download the seismic data from NCEDC, run: `python3 scripts/seismic_downloading.py`
 - To train the autoencoder and compute the seismic signal embeddings, run: `python3 scripts/seismic_autoencoding.py`
-- 
-...
+- Seismic event signal analysis in the notebook: `notebooks/seismic_analysis.ipynb`
