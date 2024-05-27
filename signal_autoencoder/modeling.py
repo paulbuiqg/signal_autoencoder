@@ -94,15 +94,6 @@ class SignalAutoencoder(nn.Module):
         self.decoder = SignalDecoder(n_channel_in, n_conv_channel_1,
                                      n_conv_channel_2, n_conv_channel_3,
                                      lstm_hidden_size, n_lstm_layer)
-        # # Checkpoint
-        # self.checkpoint = {
-        #     'train_loss_history': [],
-        #     'val_loss_history': [],
-        #     'epochs': 0,
-        #     'best_val_loss': float('inf'),
-        #     'best_epoch': 0,
-        #     'patience_counter': 0,
-        # }
         # Checkpoint
         self.checkpoint = {
             'loss_history': [],
