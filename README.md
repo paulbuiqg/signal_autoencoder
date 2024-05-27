@@ -1,4 +1,4 @@
-# Signal Autoencoder [WIP]
+# Signal Autoencoder
 
 A neural network autoencoder for multichannel, one-dimensional signals of variable length.
 
