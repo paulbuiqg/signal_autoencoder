@@ -45,6 +45,12 @@ The data is obtained from the [Northern California Earthquake Data Center](https
   <img src="https://github.com/paulbuiqg/signal_autoencoder/blob/main/viz/HNZ.png" />
 </p>
 
+The autoencoder is trained for one epoch.
+
+<p align="center">
+  <img src="https://github.com/paulbuiqg/signal_autoencoder/blob/main/viz/loss.png" />
+</p>
+
 
 ## How to use
 
