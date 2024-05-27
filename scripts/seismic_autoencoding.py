@@ -46,8 +46,8 @@ n_conv_channel_3 = 256
 lstm_hidden_size = 256
 n_lstm_layer = 1
 model = modeling.SignalAutoencoder(3, n_conv_channel_1, n_conv_channel_2,
-                                n_conv_channel_3, lstm_hidden_size,
-                                n_lstm_layer).to(device)
+                                   n_conv_channel_3, lstm_hidden_size,
+                                   n_lstm_layer).to(device)
 print(f'The model has {modeling.count_parameters(model)} parameters')
 loss_fn = modeling.sequence_l1
 optimizer = torch.optim.Adam(model.parameters(), lr=.001)
