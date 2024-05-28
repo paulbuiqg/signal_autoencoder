@@ -148,9 +148,8 @@ class ConvDecoder(nn.Module):
     def forward(self, x: torch.Tensor, seqlen: int) \
             -> Tuple[torch.Tensor, int]:
         # Input size: batch, channels
-        x = x[:, :, None]
-        ones = torch.ones((1, seqlen))
-        x = torch.matmul(x, ones)  # Size: batch, channels, length
+        x = x.repeat(seqlen, 1, 1)  # Size: length, batch, channels
+        x = x.permute(1, 2, 0)  # Size: batch, channels, length
         x = self.dec(x)
         x = x.permute(0, 2, 1)  # Size: batch, length, channels
         return x
