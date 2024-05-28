@@ -9,91 +9,16 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
-class SignalEncoder(nn.Module):
-    """Encoder with 1D-convolution and LTSM layers."""
+###############
+# Autoencoder #
+###############
 
-    def __init__(self, n_channel_in: int, n_conv_channel_1: int,
-                 n_conv_channel_2: int, n_conv_channel_3: int,
-                 lstm_hidden_size: int, n_lstm_layer: int):
+
+class Autoencoder(nn.Module):
+    """Generic autoencoder class."""
+
+    def __init__(self):
         super().__init__()
-        self.conv_enc = nn.Sequential(
-            nn.Conv1d(n_channel_in, n_conv_channel_1, 3,
-                      stride=1, padding=1),
-            nn.BatchNorm1d(n_conv_channel_1),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Conv1d(n_conv_channel_1, n_conv_channel_2, 3,
-                      stride=1, padding=1),
-            nn.BatchNorm1d(n_conv_channel_2),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Conv1d(n_conv_channel_2, n_conv_channel_3, 3,
-                      stride=1, padding=1),
-        )
-        self.lstm_enc = nn.LSTM(n_conv_channel_3, lstm_hidden_size,
-                                num_layers=n_lstm_layer, batch_first=True)
-
-    def forward(self, x: torch.Tensor) \
-            -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
-        x = x.permute(0, 2, 1)  # Channel dimension 2nd
-        x = self.conv_enc(x)
-        x = x.permute(0, 2, 1)  # Feature dimension 2nd
-        x, (h, c) = self.lstm_enc(x)
-        return x, (h, c)
-
-
-class SignalDecoder(nn.Module):
-    """Decoder with LTSM and 1D-convolution layers.
-
-    Linear layer after LTSM to resize features to adjust channel dimension
-    for convolution.
-    """
-
-    def __init__(self, n_channel_in: int, n_conv_channel_1: int,
-                 n_conv_channel_2: int, n_conv_channel_3: int,
-                 lstm_hidden_size: int, n_lstm_layer: int):
-        super().__init__()
-        self.lstm_dec = nn.LSTM(lstm_hidden_size, lstm_hidden_size,
-                                num_layers=n_lstm_layer, batch_first=True)
-        self.linear_dec = nn.Linear(lstm_hidden_size, n_conv_channel_3)
-        self.conv_dec = nn.Sequential(
-            nn.Conv1d(n_conv_channel_3, n_conv_channel_2,
-                      3, stride=1, padding=1),
-            nn.BatchNorm1d(n_conv_channel_2),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Conv1d(n_conv_channel_2, n_conv_channel_1,
-                      3, stride=1, padding=1),
-            nn.BatchNorm1d(n_conv_channel_1),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Conv1d(n_conv_channel_1, n_channel_in,
-                      3, stride=1, padding=1),
-        )
-
-    def forward(self, x: torch.Tensor, s: Tuple[torch.Tensor, torch.Tensor]) \
-            -> Tuple[torch.Tensor, torch.Tensor]:
-        x, _ = self.lstm_dec(x, s)
-        x = self.linear_dec(x)
-        x = x.permute(0, 2, 1)  # Channel dimension 2nd
-        x = self.conv_dec(x)
-        x = x.permute(0, 2, 1)  # Feature dimension 2nd
-        return x
-
-
-class SignalAutoencoder(nn.Module):
-    """Autoencoder with outer LTSM and inner 1D-convolution layers."""
-
-    def __init__(self, n_channel_in: int, n_conv_channel_1: int,
-                 n_conv_channel_2: int, n_conv_channel_3: int,
-                 lstm_hidden_size: int, n_lstm_layer: int):
-        super().__init__()
-        self.encoder = SignalEncoder(n_channel_in, n_conv_channel_1,
-                                     n_conv_channel_2, n_conv_channel_3,
-                                     lstm_hidden_size, n_lstm_layer)
-        self.decoder = SignalDecoder(n_channel_in, n_conv_channel_1,
-                                     n_conv_channel_2, n_conv_channel_3,
-                                     lstm_hidden_size, n_lstm_layer)
         # Checkpoint
         self.checkpoint = {
             'loss_history': [],
@@ -101,9 +26,7 @@ class SignalAutoencoder(nn.Module):
         }
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x, (h, c) = self.encoder(x)
-        x = self.decoder(x, (h, c))
-        return x
+        pass
 
     def train_one_epoch(
         self,
@@ -153,6 +76,202 @@ class SignalAutoencoder(nn.Module):
                 emb = emb.permute((1, 0, 2))  # Batch dimension 1st
                 embeddings.append(emb)
         return torch.cat(embeddings)
+
+
+############################
+# Convolutional neural net #
+############################
+
+
+class ConvEncoder(nn.Module):
+    """Encoder with 1D-convolution layers."""
+
+    def __init__(self, n_channel_in: int, n_conv_channel_1: int,
+                 n_conv_channel_2: int, n_conv_channel_3: int,
+                 n_conv_channel_4: int):
+        super().__init__()
+        self.enc = nn.Sequential(
+            nn.Conv1d(n_channel_in, n_conv_channel_1, 3,
+                      stride=1, padding=1),
+            nn.BatchNorm1d(n_conv_channel_1),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Conv1d(n_conv_channel_1, n_conv_channel_2, 3,
+                      stride=1, padding=1),
+            nn.BatchNorm1d(n_conv_channel_2),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Conv1d(n_conv_channel_2, n_conv_channel_3, 3,
+                      stride=1, padding=1),
+            nn.BatchNorm1d(n_conv_channel_3),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Conv1d(n_conv_channel_3, n_conv_channel_4, 3,
+                      stride=1, padding=1),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Input size: batch, length, channels
+        x = x.permute(0, 2, 1)  # Size: batch, channels, length
+        x = self.enc(x)
+        x = torch.sum(x, 2)  # Size: batch, channels
+        return x
+
+
+class ConvDecoder(nn.Module):
+    """Decoder with 1D-convolution layers."""
+
+    def __init__(self, n_channel_out: int, n_conv_channel_1: int,
+                 n_conv_channel_2: int, n_conv_channel_3: int,
+                 n_conv_channel_4: int):
+        super().__init__()
+        self.dec = nn.Sequential(
+            nn.Conv1d(n_conv_channel_4, n_conv_channel_3, 3,
+                      stride=1, padding=1),
+            nn.BatchNorm1d(n_conv_channel_3),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Conv1d(n_conv_channel_3, n_conv_channel_2, 3,
+                      stride=1, padding=1),
+            nn.BatchNorm1d(n_conv_channel_2),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Conv1d(n_conv_channel_2, n_conv_channel_1, 3,
+                      stride=1, padding=1),
+            nn.BatchNorm1d(n_conv_channel_1),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Conv1d(n_conv_channel_1, n_channel_out, 3,
+                      stride=1, padding=1),
+        )
+
+    def forward(self, x: torch.Tensor, seqlen: int) \
+            -> Tuple[torch.Tensor, int]:
+        # Input size: batch, channels
+        x = x[:, :, None]
+        ones = torch.ones((1, seqlen))
+        x = torch.matmul(x, ones)  # Size: batch, channels, length
+        x = self.dec(x)
+        x = x.permute(0, 2, 1)  # Size: batch, length, channels
+        return x
+
+
+class ConvAutoencoder(Autoencoder):
+    """Autoencoder with 1D-convolution layers."""
+
+    def __init__(self, n_channel: int, n_conv_channel_1: int,
+                 n_conv_channel_2: int, n_conv_channel_3: int,
+                 n_conv_channel_4: int):
+        super().__init__()
+        self.encoder = ConvEncoder(n_channel, n_conv_channel_1,
+                                   n_conv_channel_2, n_conv_channel_3,
+                                   n_conv_channel_4)
+        self.decoder = ConvDecoder(n_channel, n_conv_channel_1,
+                                   n_conv_channel_2, n_conv_channel_3,
+                                   n_conv_channel_4)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        seqlen = x.size(1)
+        h = self.encoder(x)
+        x = self.decoder(h, seqlen)
+        return x
+
+
+######################################
+# Convolutional recurrent neural net #
+######################################
+
+
+class ConvRecEncoder(nn.Module):
+    """Encoder with 1D-convolution and LTSM layers."""
+
+    def __init__(self, n_channel_in: int, n_conv_channel_1: int,
+                 n_conv_channel_2: int, n_conv_channel_3: int,
+                 lstm_hidden_size: int, n_lstm_layer: int):
+        super().__init__()
+        self.conv_enc = nn.Sequential(
+            nn.Conv1d(n_channel_in, n_conv_channel_1, 3,
+                      stride=1, padding=1),
+            nn.BatchNorm1d(n_conv_channel_1),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Conv1d(n_conv_channel_1, n_conv_channel_2, 3,
+                      stride=1, padding=1),
+            nn.BatchNorm1d(n_conv_channel_2),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Conv1d(n_conv_channel_2, n_conv_channel_3, 3,
+                      stride=1, padding=1),
+        )
+        self.lstm_enc = nn.LSTM(n_conv_channel_3, lstm_hidden_size,
+                                num_layers=n_lstm_layer, batch_first=True)
+
+    def forward(self, x: torch.Tensor) \
+            -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        x = x.permute(0, 2, 1)  # Channel dimension 2nd
+        x = self.conv_enc(x)
+        x = x.permute(0, 2, 1)  # Feature dimension 2nd
+        x, (h, c) = self.lstm_enc(x)
+        return x, (h, c)
+
+
+class ConvRecDecoder(nn.Module):
+    """Decoder with LTSM and 1D-convolution layers.
+
+    Linear layer after LTSM to resize features to adjust channel dimension
+    for convolution.
+    """
+
+    def __init__(self, n_channel_in: int, n_conv_channel_1: int,
+                 n_conv_channel_2: int, n_conv_channel_3: int,
+                 lstm_hidden_size: int, n_lstm_layer: int):
+        super().__init__()
+        self.lstm_dec = nn.LSTM(lstm_hidden_size, lstm_hidden_size,
+                                num_layers=n_lstm_layer, batch_first=True)
+        self.linear_dec = nn.Linear(lstm_hidden_size, n_conv_channel_3)
+        self.conv_dec = nn.Sequential(
+            nn.Conv1d(n_conv_channel_3, n_conv_channel_2,
+                      3, stride=1, padding=1),
+            nn.BatchNorm1d(n_conv_channel_2),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Conv1d(n_conv_channel_2, n_conv_channel_1,
+                      3, stride=1, padding=1),
+            nn.BatchNorm1d(n_conv_channel_1),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Conv1d(n_conv_channel_1, n_channel_in,
+                      3, stride=1, padding=1),
+        )
+
+    def forward(self, x: torch.Tensor, s: Tuple[torch.Tensor, torch.Tensor]) \
+            -> Tuple[torch.Tensor, torch.Tensor]:
+        x, _ = self.lstm_dec(x, s)
+        x = self.linear_dec(x)
+        x = x.permute(0, 2, 1)  # Channel dimension 2nd
+        x = self.conv_dec(x)
+        x = x.permute(0, 2, 1)  # Feature dimension 2nd
+        return x
+
+
+class ConvRecAutoencoder(Autoencoder):
+    """Autoencoder with outer LTSM and inner 1D-convolution layers."""
+
+    def __init__(self, n_channel_in: int, n_conv_channel_1: int,
+                 n_conv_channel_2: int, n_conv_channel_3: int,
+                 lstm_hidden_size: int, n_lstm_layer: int):
+        super().__init__()
+        self.encoder = ConvRecEncoder(n_channel_in, n_conv_channel_1,
+                                      n_conv_channel_2, n_conv_channel_3,
+                                      lstm_hidden_size, n_lstm_layer)
+        self.decoder = ConvRecDecoder(n_channel_in, n_conv_channel_1,
+                                      n_conv_channel_2, n_conv_channel_3,
+                                      lstm_hidden_size, n_lstm_layer)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x, (h, c) = self.encoder(x)
+        x = self.decoder(x, (h, c))
+        return x
 
 
 def count_parameters(model: nn.Module) -> int:
