@@ -10,6 +10,10 @@ from tqdm import tqdm
 
 
 def conv_block(n_channel_in: int, n_channel_out: int) -> nn.Sequential:
+    """Return convolutional block: Conv1D -> ReLU -> Conv1D.
+    
+    With batch normalization and dropout too.
+    """
     return nn.Sequential(
         nn.Conv1d(n_channel_in, n_channel_out, 3, stride=1, padding=1),
         nn.BatchNorm1d(n_channel_out),
