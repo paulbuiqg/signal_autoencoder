@@ -7,11 +7,12 @@ The encoder pipes one convolutional block with three 1D-convolutions layers, and
 Schematically, the encoder architecture is:
 ```
     input
-->  Conv1d(n_channel_in, n_conv_channel_1)
-->  ReLU
-->  Conv1d(n_conv_channel_1, n_conv_channel_2)
-->  ReLU
-->  Conv1d(n_conv_channel_2, n_conv_channel_3)
+->  ConvBlock(n_channel_in, n_conv_channel_1)
+->  MaxPool(/2)
+->  ConvBlock(n_conv_channel_1, n_conv_channel_2)
+->  MaxPool(/2)
+->  ConvBlock(n_conv_channel_2, n_conv_channel_3)
+->  MaxPool(/2)
 ->  LSTM(n_conv_channel_3, lstm_hidden_size)
 ->  output, hidden_state, cell_state
 ```
@@ -19,12 +20,17 @@ and the decoder architecture is
 ```
     output, hidden_state, cell_state
 ->  LSTM(lstm_hidden_size, lstm_hidden_size)
-->  Linear(lstm_hidden_size, n_conv_channel_3)
-->  Conv1d(n_conv_channel_3, n_conv_channel_2)
-->  ReLU
-->  Conv1d(n_conv_channel_2, n_conv_channel_1)
-->  ReLU
-->  Conv1d(n_conv_channel_1, n_channel_in)
+->  Linear(lstm_hidden_size, n_conv_channel_3
+->  Upsample(x2)
+->  ConvBlock(n_conv_channel_3, n_conv_channel_2)
+->  Upsample(x2)
+->  ConvBlock(n_conv_channel_2, n_conv_channel_1)
+->  Upsample(x2)
+->  ConvBlock(n_conv_channel_1, n_channel_in)
+```
+where `ConvBlock(n_channel_in, n_channel_out)` is
+```
+Conv1d(n_channel_in, n_channel_out) -> ReLU -> Conv1d(n_channel_out, n_channel_out)
 ```
 
 The embedding produced by the encoder is the (flattened) hidden state outputed from its LSTM layers.
