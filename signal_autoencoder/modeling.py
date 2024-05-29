@@ -9,6 +9,17 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
+def conv_block(n_channel_in: int, n_channel_out: int) -> nn.Sequential:
+    return nn.Sequential(
+        nn.Conv1d(n_channel_in, n_channel_out, 3, stride=1, padding=1),
+        nn.BatchNorm1d(n_channel_out),
+        nn.ReLU(),
+        nn.Dropout(p=0.5),
+        nn.Conv1d(n_channel_out, n_channel_out, 3, stride=1, padding=1),
+        nn.BatchNorm1d(n_channel_out)
+    )
+
+
 ###############
 # Autoencoder #
 ###############
@@ -90,25 +101,10 @@ class ConvEncoder(nn.Module):
                  n_conv_channel_2: int, n_conv_channel_3: int,
                  n_conv_channel_4: int):
         super().__init__()
-        self.enc = nn.Sequential(
-            nn.Conv1d(n_channel_in, n_conv_channel_1, 3,
-                      stride=1, padding=1),
-            nn.BatchNorm1d(n_conv_channel_1),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Conv1d(n_conv_channel_1, n_conv_channel_2, 3,
-                      stride=1, padding=1),
-            nn.BatchNorm1d(n_conv_channel_2),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Conv1d(n_conv_channel_2, n_conv_channel_3, 3,
-                      stride=1, padding=1),
-            nn.BatchNorm1d(n_conv_channel_3),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Conv1d(n_conv_channel_3, n_conv_channel_4, 3,
-                      stride=1, padding=1),
-        )
+        self.enc = conv_block(n_channel_in, n_conv_channel_1)
+        self.enc += conv_block(n_conv_channel_1, n_conv_channel_2)
+        self.enc += conv_block(n_conv_channel_2, n_conv_channel_3)
+        self.enc += conv_block(n_conv_channel_3, n_conv_channel_4)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Input size: batch, length, channels
@@ -125,25 +121,10 @@ class ConvDecoder(nn.Module):
                  n_conv_channel_2: int, n_conv_channel_3: int,
                  n_conv_channel_4: int):
         super().__init__()
-        self.dec = nn.Sequential(
-            nn.Conv1d(n_conv_channel_4, n_conv_channel_3, 3,
-                      stride=1, padding=1),
-            nn.BatchNorm1d(n_conv_channel_3),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Conv1d(n_conv_channel_3, n_conv_channel_2, 3,
-                      stride=1, padding=1),
-            nn.BatchNorm1d(n_conv_channel_2),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Conv1d(n_conv_channel_2, n_conv_channel_1, 3,
-                      stride=1, padding=1),
-            nn.BatchNorm1d(n_conv_channel_1),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Conv1d(n_conv_channel_1, n_channel_out, 3,
-                      stride=1, padding=1),
-        )
+        self.dec = conv_block(n_conv_channel_4, n_conv_channel_3)
+        self.dec += conv_block(n_conv_channel_3, n_conv_channel_2)
+        self.dec += conv_block(n_conv_channel_2, n_conv_channel_1)
+        self.dec += conv_block(n_conv_channel_1, n_channel_out)
 
     def forward(self, x: torch.Tensor, seqlen: int) \
             -> Tuple[torch.Tensor, int]:
@@ -189,28 +170,21 @@ class ConvRecEncoder(nn.Module):
                  n_conv_channel_2: int, n_conv_channel_3: int,
                  lstm_hidden_size: int, n_lstm_layer: int):
         super().__init__()
-        self.conv_enc = nn.Sequential(
-            nn.Conv1d(n_channel_in, n_conv_channel_1, 3,
-                      stride=1, padding=1),
-            nn.BatchNorm1d(n_conv_channel_1),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Conv1d(n_conv_channel_1, n_conv_channel_2, 3,
-                      stride=1, padding=1),
-            nn.BatchNorm1d(n_conv_channel_2),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Conv1d(n_conv_channel_2, n_conv_channel_3, 3,
-                      stride=1, padding=1),
-        )
+        self.conv_enc = conv_block(n_channel_in, n_conv_channel_1)
+        self.conv_enc.append(nn.MaxPool1d(2))
+        self.conv_enc += conv_block(n_conv_channel_1, n_conv_channel_2)
+        self.conv_enc.append(nn.MaxPool1d(2))
+        self.conv_enc += conv_block(n_conv_channel_2, n_conv_channel_3)
+        self.conv_enc.append(nn.MaxPool1d(2))
         self.lstm_enc = nn.LSTM(n_conv_channel_3, lstm_hidden_size,
                                 num_layers=n_lstm_layer, batch_first=True)
 
     def forward(self, x: torch.Tensor) \
             -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
-        x = x.permute(0, 2, 1)  # Channel dimension 2nd
+        # Input size: batch, length, channels
+        x = x.permute(0, 2, 1)  # Size: batch, channels, length
         x = self.conv_enc(x)
-        x = x.permute(0, 2, 1)  # Feature dimension 2nd
+        x = x.permute(0, 2, 1)  # Size: batch, length, channels
         x, (h, c) = self.lstm_enc(x)
         return x, (h, c)
 
@@ -222,35 +196,28 @@ class ConvRecDecoder(nn.Module):
     for convolution.
     """
 
-    def __init__(self, n_channel_in: int, n_conv_channel_1: int,
+    def __init__(self, n_channel_out: int, n_conv_channel_1: int,
                  n_conv_channel_2: int, n_conv_channel_3: int,
                  lstm_hidden_size: int, n_lstm_layer: int):
         super().__init__()
         self.lstm_dec = nn.LSTM(lstm_hidden_size, lstm_hidden_size,
                                 num_layers=n_lstm_layer, batch_first=True)
         self.linear_dec = nn.Linear(lstm_hidden_size, n_conv_channel_3)
-        self.conv_dec = nn.Sequential(
-            nn.Conv1d(n_conv_channel_3, n_conv_channel_2,
-                      3, stride=1, padding=1),
-            nn.BatchNorm1d(n_conv_channel_2),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Conv1d(n_conv_channel_2, n_conv_channel_1,
-                      3, stride=1, padding=1),
-            nn.BatchNorm1d(n_conv_channel_1),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Conv1d(n_conv_channel_1, n_channel_in,
-                      3, stride=1, padding=1),
-        )
+        self.conv_dec = nn.Sequential(nn.Upsample(scale_factor=2))
+        self.conv_dec += conv_block(n_conv_channel_3, n_conv_channel_2)
+        self.conv_dec.append(nn.Upsample(scale_factor=2))
+        self.conv_dec += conv_block(n_conv_channel_2, n_conv_channel_1)
+        self.conv_dec.append(nn.Upsample(scale_factor=2))
+        self.conv_dec += conv_block(n_conv_channel_1, n_channel_out)
 
     def forward(self, x: torch.Tensor, s: Tuple[torch.Tensor, torch.Tensor]) \
             -> Tuple[torch.Tensor, torch.Tensor]:
+        # Input size: batch, length, features
         x, _ = self.lstm_dec(x, s)
         x = self.linear_dec(x)
-        x = x.permute(0, 2, 1)  # Channel dimension 2nd
+        x = x.permute(0, 2, 1)  # Size: batch, features, length
         x = self.conv_dec(x)
-        x = x.permute(0, 2, 1)  # Feature dimension 2nd
+        x = x.permute(0, 2, 1)  # Size: batch, length, channels
         return x
 
 
@@ -285,8 +252,12 @@ def sequence_l1(seq_in: torch.Tensor, seq_out: torch.Tensor,
 
     The mask is used to remove the effect of padded values.
     """
-    max_len = seq_in.size(1)
+    max_len = seq_out.size(1)
     batch_size = seq_in.size(0)
+    # Output sequence length might be slightly different than input sequence
+    # length
+    seq_in = seq_in[:, :max_len, :]
+    mask = mask[:, :max_len, :]
     # Sum of feature dimension
     err = torch.sum(torch.abs(seq_in - seq_out) * mask, 2)
     # Lengths
