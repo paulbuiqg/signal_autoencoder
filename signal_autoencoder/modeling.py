@@ -39,6 +39,9 @@ class Autoencoder(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         pass
 
+    def embed(self, x: torch.Tensor) -> torch.Tensor:
+        pass
+
     def train_one_epoch(
         self,
         device: str,
@@ -83,8 +86,8 @@ class Autoencoder(nn.Module):
         with torch.no_grad():
             for X, _, _ in pbar:
                 X = X.to(device)
-                _, (emb, _) = self.encoder(X)
-                emb = emb.permute((1, 0, 2))  # Batch dimension 1st
+                emb = self.embed(X)
+                emb = torch.flatten(emb, start_dim=1)
                 embeddings.append(emb)
         return torch.cat(embeddings)
 
@@ -155,6 +158,9 @@ class ConvAutoencoder(Autoencoder):
         h = self.encoder(x)
         x = self.decoder(h, seqlen)
         return x
+
+    def embed(self, x: torch.Tensor) -> torch.Tensor:
+        return self.encoder(x)
 
 
 ######################################
@@ -238,6 +244,11 @@ class ConvRecAutoencoder(Autoencoder):
         x, (h, c) = self.encoder(x)
         x = self.decoder(x, (h, c))
         return x
+
+    def embed(self, x: torch.Tensor) -> torch.Tensor:
+        _, (h, _) = self.encoder(x)
+        h = h.permute((1, 0, 2))  # Size: batch, LTSM layers, features
+        return h
 
 
 def count_parameters(model: nn.Module) -> int:
