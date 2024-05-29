@@ -1,0 +1,15 @@
+# Convolutional neural network
+conv_net:
+  n_conv_channel_1: 64
+  n_conv_channel_2: 128
+  n_conv_channel_3: 256
+  n_conv_channel_4: 256
+
+# Convolutional recurrent neural network
+conv_rec_net:
+  n_conv_channel_1: 64
+  n_conv_channel_2: 128
+  n_conv_channel_3: 256
+  lstm_hidden_size: 256
+  n_lstm_layer: 1
+  
