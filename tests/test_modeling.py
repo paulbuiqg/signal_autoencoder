@@ -191,14 +191,13 @@ def test_conv_rec_autoencoder(
     assert x_in.size(2) == x_out.size(2)  # Featuresp
 
 
-def test_sequence_l1(batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
-                     conv_autoencoder: ConvAutoencoder,
-                     conv_rec_autoencoder: ConvRecAutoencoder):
-    """Test if L1 loss between 2 batches of sequences runs smoothly."""
-    x_in, lengths, mask = batch
-    x_out = conv_rec_autoencoder(x_in)
-    lossval1 = sequence_l1(x_in, x_out, lengths, mask)
-    x_out = conv_autoencoder(x_in)
-    lossval2 = sequence_l1(x_in, x_out, lengths, mask)
-    assert lossval1
-    assert lossval2
+def test_sequence_l1():
+    """Test if L1 loss between 2 batches of sequences is correct."""
+    x1 = torch.Tensor([[.5, -.5], [.5, -.5], [.5, -.5]])
+    x2 = torch.Tensor([[1.5, .5], [1.5, .5], [1.5, .5], [1.5, .5], [1.5, .5]])
+    y1 = torch.Tensor([[.5, .5], [.5, .5], [.5, .5]])
+    y2 = torch.Tensor([[.5, .5], [.5, .5], [.5, .5], [.5, .5]])
+    x, lengths, mask = collate_fn([(x1, 3), (x2, 5)])
+    y, lengths, mask = collate_fn([(y1, 3), (y2, 4)])
+    lossval = sequence_l1(x, y, lengths, mask)
+    assert lossval == 1
