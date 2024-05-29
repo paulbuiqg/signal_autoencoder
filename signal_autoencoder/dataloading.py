@@ -69,7 +69,9 @@ class SeismicSignals(Dataset):
             signal = np.vstack((signal_0[:seqlen], signal_1[:seqlen],
                                 signal_2[:seqlen]))
             signal = torch.FloatTensor(signal.T)
-            # Normalize
+            # Centering (offset)
+            signal = signal - signal.mean(dim=0)
+            # Normalization
             if self.mean is not None and self.std is not None:
                 signal = (signal - self.mean) / self.std
             return signal, seqlen
