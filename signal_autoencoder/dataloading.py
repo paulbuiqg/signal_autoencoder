@@ -5,6 +5,7 @@ import os
 import pickle
 from typing import Tuple, Union
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
@@ -67,17 +68,15 @@ class SeismicSignals(Dataset):
             with open(filepath, 'rb') as f:
                 tr = pickle.load(f)
             signal_0, signal_1, signal_2 = tr[0].data, tr[1].data, tr[2].data
-            # Differentiation
+            # Differentiation to remove trend and center
             signal_0, signal_1, signal_2 = \
                 np.diff(signal_0), np.diff(signal_1), np.diff(signal_2)
-            #
+            # Truncate channel signals to same length
             seqlen = min(len(signal_0), len(signal_1), len(signal_2))
             signal = np.vstack((signal_0[:seqlen], signal_1[:seqlen],
                                 signal_2[:seqlen]))
             # Length axis first for padding
             signal = torch.FloatTensor(signal.T)  # Size: length, channels
-            # # Centering (offset)
-            # signal = signal - signal.mean(0)
             # Normalization
             if self.mean is not None and self.std is not None:
                 signal = (signal - self.mean) / self.std
@@ -86,10 +85,13 @@ class SeismicSignals(Dataset):
             print(filepath, str(e))
             return None
 
-    def set_mean_and_std(self, mean: float, std: float):
-        """Set mean and std values."""
-        self.mean = mean
-        self.std = std
+    def plot(self, i: int):
+        x, _ = self[i]
+        fig, axs = plt.subplots(3)
+        axs[0].plot(x[:, 0])
+        axs[1].plot(x[:, 1])
+        axs[2].plot(x[:, 2])
+        fig.show()
 
 
 def compute_signal_mean_and_std(device: str, dataloader: DataLoader) \
