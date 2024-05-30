@@ -38,9 +38,8 @@ dataloader = DataLoader(dataset,
 m, s = dataloading.compute_signal_mean_and_std(device, dataloader)
 m = m.detach().cpu()
 s = s.detach().cpu()
-print('Mean:', m)
-print('Standard deviation:', s)
-dataloader.dataset.set_mean_and_std(m, s)
+dataloader.dataset.mean = m
+dataloader.dataset.std = s
 torch.save(dataloader, 'data/dataloader.pth')
 print('Dataloader saved')
 print('')
@@ -66,11 +65,6 @@ print('Training...')
 optimizer = torch.optim.Adam(model.parameters(), lr=.0001)
 model.train_one_epoch(device, dataloader, loss_fn, optimizer)
 torch.save(model.checkpoint, 'scripts/model.pt')
-plt.plot(model.checkpoint['loss_history'])
-plt.xlabel('Iteration')
-plt.ylabel('Loss')
-plt.savefig('viz/loss.png')
-plt.close()
 print('Models saved')
 print('')
 
