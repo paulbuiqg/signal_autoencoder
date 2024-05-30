@@ -38,6 +38,8 @@ dataloader = DataLoader(dataset,
 m, s = dataloading.compute_signal_mean_and_std(device, dataloader)
 m = m.detach().cpu()
 s = s.detach().cpu()
+print('Mean:', m)
+print('Standard deviation:', s)
 dataloader.dataset.set_mean_and_std(m, s)
 torch.save(dataloader, 'data/dataloader.pth')
 print('Dataloader saved')
