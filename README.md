@@ -62,4 +62,5 @@ The data is obtained from the [Northern California Earthquake Data Center](https
 
 Notebooks:
 - Generic usage of the signal autoencoder: `notebooks/demo.ipynb`
+- Visualization of seismic signals and their reconstruction by encoding-decoding: `notebooks/seismic_reconstruction.ipynb`
 - (Naive) seismic event signal analysis: `notebooks/seismic_analysis.ipynb`
