@@ -33,7 +33,7 @@ where `ConvBlock(n_channel_in, n_channel_out)` is
 Conv1d(n_channel_in, n_channel_out) -> ReLU -> Conv1d(n_channel_out, n_channel_out)
 ```
 
-The embedding produced by the encoder is the (flattened) hidden state outputed from its LSTM layers.
+The embedding produced by the encoder is the (flattened) hidden state outputed by its LSTM layers.
 
 ## Study case: 3-channel seismic signals
 
