@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Dataset
+from torchvision.transforms import Normalize
 from tqdm import tqdm
 
 
@@ -53,6 +54,7 @@ class SeismicSignals(Dataset):
         self.files, all_files = [], os.listdir(self.path)
         for event_id in events['eventID']:
             self.files += [f for f in all_files if str(event_id) in f]
+        self.n_channel = 3
         self.mean = None
         self.std = None
 
@@ -65,12 +67,17 @@ class SeismicSignals(Dataset):
             with open(filepath, 'rb') as f:
                 tr = pickle.load(f)
             signal_0, signal_1, signal_2 = tr[0].data, tr[1].data, tr[2].data
+            # Differentiation
+            signal_0, signal_1, signal_2 = \
+                np.diff(signal_0), np.diff(signal_1), np.diff(signal_2)
+            #
             seqlen = min(len(signal_0), len(signal_1), len(signal_2))
             signal = np.vstack((signal_0[:seqlen], signal_1[:seqlen],
                                 signal_2[:seqlen]))
-            signal = torch.FloatTensor(signal.T)
-            # Centering (offset)
-            signal = signal - signal.mean(dim=0)
+            # Length axis first for padding
+            signal = torch.FloatTensor(signal.T)  # Size: length, channels
+            # # Centering (offset)
+            # signal = signal - signal.mean(0)
             # Normalization
             if self.mean is not None and self.std is not None:
                 signal = (signal - self.mean) / self.std
@@ -86,20 +93,23 @@ class SeismicSignals(Dataset):
 
 
 def compute_signal_mean_and_std(device: str, dataloader: DataLoader) \
-        -> Tuple[float, float]:
-    """Loop over dataset to infer mean and standard deviation."""
-    progress_bar = tqdm(
-        dataloader, desc='Computing signal mean & std', unit='batch')
-    cum_m, cum_m2, batch_cnt = 0, 0, 0
-    for X, _, ma in progress_bar:
-        X, ma = X.to(device), ma.to(device)
-        X = X.flatten()[ma.flatten() == 1]
-        m = X.mean()
-        m2 = (X**2).sum()
-        cum_m = (cum_m * batch_cnt + m) / (batch_cnt + 1)
-        cum_m2 = (cum_m2 * batch_cnt + m2) / (batch_cnt + 1)
-        batch_cnt += 1
-        progress_bar.set_postfix_str(f'mean={cum_m:>8f}')
-    mean = cum_m
-    std = torch.sqrt(cum_m2 - mean**2)
-    return mean.item(), std.item()
+        -> Tuple[torch.Tensor, torch.Tensor]:
+    """Infer mean and standard deviation by channel."""
+    progress_bar = tqdm(dataloader,
+                        desc='Computing signal mean & std', unit='batch')
+    means, vars = [], []
+    for X, le, ma in progress_bar:
+        X, le, ma = X.to(device), le.to(device), ma.to(device)
+        # Size of X: batch, length, channels
+        # Mean over time
+        lens = le.repeat(3, 1).T  # Size: batch, channels
+        m_ = (X * ma).sum(1) / lens  # Size: batch, channels
+        m2_ = (X**2 * ma).sum(1) / lens  # Size: batch, channels
+        # Mean over batch
+        m = m_.mean(0)  # Size: channels
+        s2 = (m2_ - m_**2).mean(0)  # Size: channels
+        means.append(m)
+        vars.append(s2)
+    means = torch.vstack(means)
+    vars = torch.vstack(vars)
+    return means.median(0).values, torch.sqrt(vars.median(0).values)
