@@ -52,7 +52,7 @@ class Autoencoder(nn.Module):
         dataloader: DataLoader,
         loss_fn: torch.nn.Module,
         optimizer: torch.optim.Optimizer,
-    ) -> Tuple[torch.optim.Optimizer, list]:
+    ):
         """Run one training epoch; update optimizer and loss history."""
         self.train()
         loss_history = []
